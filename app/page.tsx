@@ -78,7 +78,10 @@ export default function Home() {
     setError("");
     setMessage("");
     const form = new FormData(event.currentTarget);
-    const payload = Object.fromEntries(form.entries());
+    const payload: Record<string, string> = {};
+    for (const [key, value] of form.entries()) {
+      if (typeof value === "string") payload[key] = value;
+    }
     try {
       if (authMode === "login") {
         await requestJson("/api/auth/login", { method: "POST", body: JSON.stringify(payload) });
@@ -86,7 +89,6 @@ export default function Home() {
         setMessage("Welcome back.");
       } else {
         const photo = form.get("photo");
-        delete payload.photo;
         if (photo instanceof File && photo.size > 0) {
           if (photo.size > 512 * 1024) throw new Error("Photo must be 512 KB or smaller.");
           payload.photoDataUrl = await new Promise<string>((resolve, reject) => {

@@ -4,20 +4,29 @@ Mobile-first loyalty points management app built with Next.js, PostgreSQL, and V
 
 ## Database
 
-Create a PostgreSQL database using the Vercel Marketplace, such as the Neon integration, and connect it to the Vercel project. Use the provider's pooled connection string as `DATABASE_URL` (or `POSTGRES_URL`). For local development, copy it into `.env.local`; never commit credentials.
+Create a PostgreSQL database using the Vercel Marketplace, such as the Neon integration, and connect it to the Vercel project. Use the provider's pooled connection string as `DATABASE_URL` (or `POSTGRES_URL`). For local development, copy it into `.env.local`; the database scripts load `.env.local` automatically. Never commit credentials.
 
-Apply the schema and create the first administrator from a trusted local machine:
+Set these Vercel Project → Settings → Environment Variables for Production and Preview as appropriate:
+
+- `DATABASE_URL`: the PostgreSQL provider's pooled connection string.
+- `SESSION_SECRET`: a unique cryptographically random value of at least 32 characters. Keep it stable across deployments.
+
+Apply the schema and create the first administrator from a trusted local machine. Use a protected production database connection for these one-time setup commands:
 
 ```powershell
-$env:DATABASE_URL = "your-vercel-postgres-connection-string"
-$env:SESSION_SECRET = "a-random-secret-with-at-least-32-characters"
+npm run db:migrate
 $env:ADMIN_EMAIL = "you@example.com"
 $env:ADMIN_PASSWORD = "a-unique-password-of-at-least-12-characters"
-npm run db:migrate
 npm run db:seed-admin
 ```
 
-Set `DATABASE_URL` and `SESSION_SECRET` in the Vercel project's environment variables. `SESSION_SECRET` should be generated from a cryptographically secure random source and kept stable between deployments.
+The seed command creates the initial admin only when no admin already exists. Do not set `ADMIN_PASSWORD` in Vercel's runtime environment.
+
+## Deploy to the Vercel project
+
+The target project is [loyalty](https://vercel.com/loyalty-0aa5/loyalty/9kmNRnSdW1RzSDjGYEb8UZvaukZj). In that project's **Settings → Git**, connect the Git repository containing this workspace. Vercel detects Next.js automatically; use the repository root as the Root Directory and leave the default Next.js build settings. Add the environment variables above, attach the PostgreSQL Marketplace integration, then push the deployment branch to trigger a build. Run `npm run db:migrate` and `npm run db:seed-admin` from a trusted machine before signing in.
+
+The deployment target should be connected to the repository's `main` branch so a push triggers a Vercel build. If the project is connected to a different repository or branch, update its Git settings before pushing.
 
 ## Run locally
 

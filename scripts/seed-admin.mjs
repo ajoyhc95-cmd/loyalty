@@ -1,6 +1,8 @@
 import { createHmac, randomUUID, scryptSync } from "node:crypto";
+import { loadEnvConfig } from "@next/env";
 import pg from "pg";
 
+loadEnvConfig(process.cwd());
 const connectionString = process.env.DATABASE_URL ?? process.env.POSTGRES_URL;
 const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
 const password = process.env.ADMIN_PASSWORD;
