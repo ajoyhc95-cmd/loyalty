@@ -27,7 +27,7 @@ type DashboardData = {
   otherBalances?: number;
 };
 
-async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
+async function requestJson<T>(url: string, init?: RequestInit, options?: { allowUnauthorized?: boolean }): Promise<T | null> {
   const headers = new Headers(init?.headers);
   if (!headers.has("content-type")) headers.set("content-type", "application/json");
   const response = await fetch(url, {
@@ -35,7 +35,12 @@ async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
     headers,
   });
   const body = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(body.error ?? "The request could not be completed.");
+  if (!response.ok) {
+    if ((response.status === 401 || response.status === 403) && options?.allowUnauthorized) {
+      return null;
+    }
+    throw new Error(body.error ?? "The request could not be completed.");
+  }
   return body as T;
 }
 
@@ -57,7 +62,11 @@ export default function Home() {
   const [today, setToday] = useState("");
   const refresh = useCallback(async () => {
     try {
-      const result = await requestJson<DashboardData>("/api/session");
+      const result = await requestJson<DashboardData>("/api/session", undefined, { allowUnauthorized: true });
+      if (!result) {
+        setData(null);
+        return;
+      }
       setData(result);
     } catch (reason) {
       setData(null);
@@ -115,7 +124,7 @@ export default function Home() {
     setMessage("");
     try {
       const result = await requestJson<Record<string, unknown>>(path, { method: path.includes("/plans") ? "PUT" : "POST", body: JSON.stringify(payload) });
-      setMessage(typeof result.message === "string" ? result.message : success);
+      setMessage(result && typeof result.message === "string" ? result.message : success);
       await refresh();
       return result;
     } catch (reason) {
